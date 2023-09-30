@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelToObjects", "ExcelToObjects\ExcelToObjects.csproj", "{07E266FE-4573-4371-AEAD-8B63BC5F83FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelUtilities", "ExcelUtilities\ExcelUtilities.csproj", "{07E266FE-4573-4371-AEAD-8B63BC5F83FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelToObjectsTests", "ExcelToObjectsTests\ExcelToObjectsTests.csproj", "{2576D578-F0D2-4D31-9895-2B4134C00E90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelUtilitiesTests", "ExcelUtilitiesTests\ExcelUtilitiesTests.csproj", "{2576D578-F0D2-4D31-9895-2B4134C00E90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

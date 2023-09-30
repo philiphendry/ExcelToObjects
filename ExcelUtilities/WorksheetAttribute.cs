@@ -1,4 +1,4 @@
-﻿namespace ExcelToObjects;
+﻿namespace ExcelUtilities;
 
 /// <summary>
 /// Provides information to identify a worksheet and map data from
