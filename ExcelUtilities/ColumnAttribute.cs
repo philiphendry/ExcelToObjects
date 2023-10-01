@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace ExcelUtilities;
 
@@ -41,7 +40,7 @@ public class ColumnAttribute : Attribute
     }
     
     /// <summary>
-    /// An internal property used to determine the order of Columns.
+    /// An internal property used to determine the order of Columns by there position in the class.
     /// </summary>
     internal int Order { get; }
 
@@ -50,23 +49,23 @@ public class ColumnAttribute : Attribute
     /// <see cref="WorksheetAttribute.HasHeadings"/> must be set for
     /// this property to have effect.
     /// </summary>
-    public string? Heading { get; init; } = null;
+    public string? Heading { get; init; }
 
     /// <summary>
     /// The column as identified by the built-in names. For example, the
     /// first column is 'A' followed by 'B' and the 27th column 'AA'.
     /// </summary>
-    public string? Name { get; init; } = null;
+    public string? Name { get; init; }
 
     /// <summary>
     /// The column identified by its index. This is one-based so column
     /// 'A' is at index 1.
     /// </summary>
-    public int Index { get; init; } = 0;
+    public int Index { get; init; }
 
     /// <summary>
     /// By default all columns are required but can be made optional
     /// by set <see cref="Optional"/> to true;
     /// </summary>
-    public bool Optional { get; init; } = false;
+    public bool Optional { get; init; }
 }

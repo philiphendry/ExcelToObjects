@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml.Spreadsheet;
 using ExcelUtilities;
 // ReSharper disable ClassNeverInstantiated.Local
 // ReSharper disable UnassignedGetOnlyAutoProperty
@@ -209,8 +208,10 @@ public class ExcelToObjectsTests
     [Worksheet(Name = "WithBlankRows")]
     private class WorksheetWithBlankRowsAndRequiredProperty
     {
+        // ReSharper disable UnusedMember.Local
         [Column(Optional = true)] public double? FirstColumn { get; init; }
         [Column] public string? SecondColumn { get; init; }
+        // ReSharper restore UnusedMember.Local
     }
 
     [Test]

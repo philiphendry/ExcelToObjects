@@ -14,10 +14,8 @@ public class ColumnIndexesTests
     [Test]
     public void Given_AnAttributeNameIsProvidedButInTheWrongFormat_Then_AnExceptionIsThrown()
     {
-        var exception = Assert.Throws<InvalidOperationException>(() =>
-            ColumnIndexes.GetColumnIndex(new ColumnAttribute() {Name = "BBBB"}, "ColumnWithNameWrongFormat", 0, Array.Empty<string>()));
-        Assert.That(exception!.Message,
-            Is.EqualTo("The property 'ColumnAttribute.ColumnWithNameWrongFormat' has an invalid Name of 'BBBB'."));
+        var exception = Assert.Throws<InvalidOperationException>(() => ColumnIndexes.GetColumnIndex(new ColumnAttribute() {Name = "BBBB"}, "ColumnWithNameWrongFormat", 0, Array.Empty<string>()));
+        Assert.That(exception!.Message, Is.EqualTo("The property 'ColumnAttribute.ColumnWithNameWrongFormat' has an invalid Name of 'BBBB'."));
     }
 
     [Test]

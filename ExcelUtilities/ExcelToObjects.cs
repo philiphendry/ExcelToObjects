@@ -7,10 +7,8 @@ public static class ExcelToObjects
 {
     public static ConversionResult<T> ReadData<T>(string filename) where T : new()
     {
-        var validationProblems = new List<ValidationProblem>();
-
         var worksheetAttribute = typeof(T).GetCustomAttributes(typeof(WorksheetAttribute), false).SingleOrDefault() as WorksheetAttribute
-            ?? new WorksheetAttribute { Name = typeof(T).Name };
+                                 ?? new WorksheetAttribute { Name = typeof(T).Name };
         
         var workbook = new XLWorkbook(filename);
         if (!workbook.Worksheets.TryGetWorksheet(worksheetAttribute.Name, out var worksheet))
@@ -49,13 +47,15 @@ public static class ExcelToObjects
                             ColumnAttribute
                 })
             .Where(c => c.ColumnAttribute != null)
+            // Sort the properties by their position in the class so the propertyIndex can be used.
+            .OrderBy(c => c.ColumnAttribute!.Order)
             .Select((c, propertyIndex) =>
                 new
                 {
-                    PropertyInfo = c.PropertyInfo,
+                    c.PropertyInfo,
                     PropertyName = c.PropertyInfo.Name,
                     PropertyIndex = propertyIndex,
-                    Optional = c.ColumnAttribute!.Optional,
+                    c.ColumnAttribute!.Optional,
                     ColumnIndex = ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
                         c.PropertyInfo.Name, propertyIndex, worksheetHeadings)
                 })

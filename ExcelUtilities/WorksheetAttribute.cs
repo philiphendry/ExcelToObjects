@@ -11,7 +11,7 @@ public class WorksheetAttribute : Attribute
     /// The name of the worksheet data will be loaded from.
     /// If not provided the name of the class will be used.
     /// </summary>
-    public string? Name { get; init; } = null;
+    public string? Name { get; init; }
 
     /// <summary>
     /// If no mapped properties are set from the row in the spreadsheet then, be
@@ -19,13 +19,13 @@ public class WorksheetAttribute : Attribute
     /// from required properties that have no value. Setting <see cref="SkipBlankRows"/>
     /// to <value>true</value> will skip these rows without reporting any issues.
     /// </summary>
-    public bool SkipBlankRows { get; init; } = false;
+    public bool SkipBlankRows { get; init; }
 
     /// <summary>
     /// If the worksheet contains a row with headings then set <see cref="HasHeadings"/>
     /// to <value>true</value>. The default is <value>false</value>. 
     /// </summary>
-    public bool HasHeadings { get; init; } = false;
+    public bool HasHeadings { get; init; }
 
     /// <summary>
     /// If <see cref="HasHeadings"/> is <value>true</value> then they are assumed
