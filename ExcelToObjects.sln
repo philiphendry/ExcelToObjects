@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelUtilities", "ExcelUtil
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelUtilitiesTests", "ExcelUtilitiesTests\ExcelUtilitiesTests.csproj", "{2576D578-F0D2-4D31-9895-2B4134C00E90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExcelUtilitiesBenchmarks", "ExcelUtilitiesBenchmarks\ExcelUtilitiesBenchmarks.csproj", "{5CFA235A-3895-4706-9952-49A9137DA0D3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{2576D578-F0D2-4D31-9895-2B4134C00E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2576D578-F0D2-4D31-9895-2B4134C00E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2576D578-F0D2-4D31-9895-2B4134C00E90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CFA235A-3895-4706-9952-49A9137DA0D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CFA235A-3895-4706-9952-49A9137DA0D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CFA235A-3895-4706-9952-49A9137DA0D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CFA235A-3895-4706-9952-49A9137DA0D3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

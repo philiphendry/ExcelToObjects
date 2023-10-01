@@ -7,10 +7,21 @@ public static class ExcelToObjects
 {
     public static ConversionResult<T> ReadData<T>(string filename) where T : new()
     {
+        using Stream stream = File.Open(filename, FileMode.Open);
+        return InternalReadData<T>(stream);
+    }
+    
+    public static ConversionResult<T> ReadData<T>(Stream spreadsheetStream) where T : new()
+    {
+        return InternalReadData<T>(spreadsheetStream);
+    }
+
+    private static ConversionResult<T> InternalReadData<T>(Stream spreadsheetStream) where T : new()
+    {
         var worksheetAttribute = typeof(T).GetCustomAttributes(typeof(WorksheetAttribute), false).SingleOrDefault() as WorksheetAttribute
                                  ?? new WorksheetAttribute { Name = typeof(T).Name };
         
-        var workbook = new XLWorkbook(filename);
+        var workbook = new XLWorkbook(spreadsheetStream);
         if (!workbook.Worksheets.TryGetWorksheet(worksheetAttribute.Name, out var worksheet))
         {
             return new ConversionResult<T>(
@@ -115,9 +126,7 @@ public static class ExcelToObjects
                 }
                 catch (Exception e)
                 {
-                    throw new InvalidCastException(
-                        $"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed.",
-                        e);
+                    validationProblems.Add(new ValidationProblem($"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed."));
                 }
             }
 

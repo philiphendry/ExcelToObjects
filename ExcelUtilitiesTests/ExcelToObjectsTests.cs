@@ -278,4 +278,24 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[5].SecondColumn, Is.EqualTo("five"));
         Assert.That(result.Data[6].SecondColumn, Is.EqualTo("six"));
     }
+    
+    [Worksheet(Name = "Sheet1", HasHeadings = true)]
+    private class BenchmarkData
+    {
+        // ReSharper disable UnusedMember.Local
+        [Column] public int First { get; set; }
+        [Column] public double Second { get; set; }
+        [Column] public string Third { get; set; }
+        [Column] public string Fourth { get; set; }
+        [Column] public DateOnly Fifth { get; set; }
+        // ReSharper restore UnusedMember.Local
+    }
+
+    [Test]
+    public void BenchmarkTest()
+    {
+        var filename = Path.Combine(Environment.CurrentDirectory, @"TestFiles\Benchmark.xlsx");
+        var results = ExcelToObjects.ReadData<BenchmarkData>(filename);
+        Assert.That(results.IsValid, Is.True);
+    }
 }
