@@ -148,6 +148,10 @@ public static class ExcelToObjects
         {
             propertyInfo.SetValue(dataRow, cellValue.GetValue<double>());
         }
+        else if (propertyInfo.PropertyType == typeof(int) || propertyInfo.PropertyType == typeof(int?))
+        {
+            propertyInfo.SetValue(dataRow, cellValue.GetValue<int>());            
+        }
         else if (propertyInfo.PropertyType == typeof(DateOnly) || propertyInfo.PropertyType == typeof(DateOnly?))
         {
             propertyInfo.SetValue(dataRow, DateOnly.FromDateTime(cellValue.GetDateTime()));
