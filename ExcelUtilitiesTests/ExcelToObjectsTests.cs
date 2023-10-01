@@ -76,6 +76,22 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[0].DoubleColumn, Is.EqualTo(1.23d));
         Assert.That(result.Data[0].NullableDoubleColumn, Is.EqualTo(1.23d));
     }
+
+    [Worksheet(Name = "TypeTests")]
+    private class IntegerColumnWorksheet
+    {
+        [Column(Name = "H")] public int IntegerColumn { get; init; }
+        [Column(Name = "H")] public int? NullableIntegerColumn { get; init; }
+    }
+    
+    [Test]
+    public void Given_ColumnDefinitionOfInteger_Then_TheDataIsMappedCorrectly()
+    {
+        var result = ExcelToObjects.ReadData<IntegerColumnWorksheet>(_testFilename);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
+        Assert.That(result.Data[0].IntegerColumn, Is.EqualTo(3));
+        Assert.That(result.Data[0].NullableIntegerColumn, Is.EqualTo(3));
+    }
     
     [Worksheet(Name = "TypeTests")]
     private class DateOnlyColumnWorksheet

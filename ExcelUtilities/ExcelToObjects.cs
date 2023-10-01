@@ -105,29 +105,20 @@ public static class ExcelToObjects
             var dataRow = new T();
             foreach (var columnProperty in columnProperties)
             {
-                IXLCell cellValue = null!;
-                try
+                var cellValue = row.Cell(columnProperty.ColumnIndex);
+                
+                if (cellValue.DataType == XLDataType.Blank)
                 {
-                    cellValue = row.Cell(columnProperty.ColumnIndex);
-
-                    if (cellValue.DataType == XLDataType.Blank)
+                    if (columnProperty.Optional)
                     {
-                        if (columnProperty.Optional)
-                        {
-                            continue;
-                        }
-
-                        validationProblems.Add(
-                            new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required."));
-                        break;
+                        continue;
                     }
 
-                    SetProperty(columnProperty.PropertyInfo, dataRow, cellValue);
+                    validationProblems.Add(new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required."));
+                    break;
                 }
-                catch (Exception e)
-                {
-                    validationProblems.Add(new ValidationProblem($"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed."));
-                }
+
+                SetProperty(columnProperty.PropertyInfo, dataRow, cellValue);
             }
 
             if (validationProblems.Count > 0)
