@@ -1,7 +1,5 @@
 ﻿using System.Reflection;
 using ClosedXML.Excel;
-using DocumentFormat.OpenXml.Drawing;
-using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace ExcelUtilities;
 
@@ -10,7 +8,6 @@ public static class ExcelToObjects
     public static ConversionResult<T> ReadData<T>(string filename) where T : new()
     {
         var validationProblems = new List<ValidationProblem>();
-        var data = new List<T>();
 
         var worksheetAttribute = typeof(T).GetCustomAttributes(typeof(WorksheetAttribute), false).SingleOrDefault() as WorksheetAttribute
             ?? new WorksheetAttribute { Name = typeof(T).Name };
@@ -18,103 +15,121 @@ public static class ExcelToObjects
         var workbook = new XLWorkbook(filename);
         if (!workbook.Worksheets.TryGetWorksheet(worksheetAttribute.Name, out var worksheet))
         {
-            validationProblems.Add(new ValidationProblem($"The worksheet could not be found with the name '{worksheetAttribute.Name}'."));
+            return new ConversionResult<T>(
+                new List<ValidationProblem>
+                    { new($"The worksheet could not be found with the name '{worksheetAttribute.Name}'.") },
+                new List<T>());
         }
         else
         {
-            var worksheetHeadings = worksheetAttribute.HasHeadings
-                ? worksheet.Row(worksheetAttribute.HeadingsOnRow).Cells().Select(c => c.Value.ToString()).ToArray()
-                : Array.Empty<string>();
+            var worksheetResult = ReadWorksheet<T>(worksheetAttribute, worksheet);
+            return new ConversionResult<T>(worksheetResult.validationProblems, worksheetResult.data);
+        }
+    }
 
-            var columnProperties = typeof(T)
-                .GetProperties()
-                .Select(propertyInfo =>
-                    new
-                    {
-                        PropertyInfo = propertyInfo,
-                        ColumnAttribute =
-                            propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).SingleOrDefault() as
-                                ColumnAttribute
-                    })
-                .Where(c => c.ColumnAttribute != null)
-                .Select((c, propertyIndex) =>
-                    new
-                    {
-                        PropertyInfo = c.PropertyInfo,
-                        PropertyName = c.PropertyInfo.Name,
-                        PropertyIndex = propertyIndex,
-                        Optional = c.ColumnAttribute!.Optional,
-                        ColumnIndex = ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
-                            c.PropertyInfo.Name, propertyIndex, worksheetHeadings)
-                    })
-                // Filter out the columns that are optional and don't exist
-                .Where(p => p.ColumnIndex != -1)
-                .ToList();
+    private static (List<T> data, List<ValidationProblem> validationProblems) ReadWorksheet<T>(
+        WorksheetAttribute worksheetAttribute, 
+        IXLWorksheet worksheet) where T : new()
+    {
+        var validationProblems = new List<ValidationProblem>();
+        var data = new List<T>();
 
-            var firstRowIndex = worksheetAttribute.HasHeadings ? worksheetAttribute.HeadingsOnRow + 1 : 1;
-            var lastRowIndex = worksheet.LastRowUsed(XLCellsUsedOptions.Contents)?.RowNumber() ?? 0;
+        var worksheetHeadings = worksheetAttribute.HasHeadings
+            ? worksheet.Row(worksheetAttribute.HeadingsOnRow).Cells().Select(c => c.Value.ToString()).ToArray()
+            : Array.Empty<string>();
 
-            // Ignore any trailing blanks rows
-            while (lastRowIndex > 0 && worksheet.Row(lastRowIndex).Cells(usedCellsOnly: true).All(c => string.IsNullOrEmpty(c.GetString().Trim())))
-            {
-                lastRowIndex--;
-            }
-            
-            foreach (var row in worksheet.Rows(firstRowIndex, lastRowIndex))
-            {
-                if (row.Cells(usedCellsOnly: true).All(c => c.DataType == XLDataType.Blank))
+        var columnProperties = typeof(T)
+            .GetProperties()
+            .Select(propertyInfo =>
+                new
                 {
-                    if (worksheetAttribute.SkipBlankRows)
-                    {
-                        continue;
-                    }
-
-                    var firstRequiredProperty = columnProperties.FirstOrDefault(p => p.Optional == false);
-                    if (firstRequiredProperty != null)
-                    {
-                        validationProblems.Add(new ValidationProblem(
-                            $"The cell {worksheet}!{row.Cell(firstRequiredProperty.ColumnIndex)} has no value but is required."));
-                        break;
-                    }
-                }
-                
-                var dataRow = new T();
-                foreach (var columnProperty in columnProperties)
+                    PropertyInfo = propertyInfo,
+                    ColumnAttribute =
+                        propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).SingleOrDefault() as
+                            ColumnAttribute
+                })
+            .Where(c => c.ColumnAttribute != null)
+            .Select((c, propertyIndex) =>
+                new
                 {
-                    IXLCell cellValue = null!;
-                    try
-                    {
-                        cellValue = row.Cell(columnProperty.ColumnIndex);
+                    PropertyInfo = c.PropertyInfo,
+                    PropertyName = c.PropertyInfo.Name,
+                    PropertyIndex = propertyIndex,
+                    Optional = c.ColumnAttribute!.Optional,
+                    ColumnIndex = ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
+                        c.PropertyInfo.Name, propertyIndex, worksheetHeadings)
+                })
+            // Filter out the columns that are optional and don't exist
+            .Where(p => p.ColumnIndex != -1)
+            .ToList();
 
-                        if (cellValue.DataType == XLDataType.Blank)
-                        {
-                            if (columnProperty.Optional)
-                            {
-                                continue;
-                            }
-                            
-                            validationProblems.Add(new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required."));
-                            break;
-                        }
+        var firstRowIndex = worksheetAttribute.HasHeadings ? worksheetAttribute.HeadingsOnRow + 1 : 1;
+        var lastRowIndex = worksheet.LastRowUsed(XLCellsUsedOptions.Contents)?.RowNumber() ?? 0;
 
-                        SetProperty(columnProperty.PropertyInfo, dataRow, cellValue);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new InvalidCastException($"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed.", e);
-                    }
-                }
-
-                if (validationProblems.Count > 0)
-                {
-                    break;
-                }
-                
-                data.Add(dataRow);
-            }
+        // Ignore any trailing blanks rows
+        while (lastRowIndex > 0 && worksheet.Row(lastRowIndex).Cells(usedCellsOnly: true)
+                   .All(c => string.IsNullOrEmpty(c.GetString().Trim())))
+        {
+            lastRowIndex--;
         }
 
-        return new ConversionResult<T>(validationProblems, data);
+        foreach (var row in worksheet.Rows(firstRowIndex, lastRowIndex))
+        {
+            if (row.Cells(usedCellsOnly: true).All(c => c.DataType == XLDataType.Blank))
+            {
+                if (worksheetAttribute.SkipBlankRows)
+                {
+                    continue;
+                }
+
+                var firstRequiredProperty = columnProperties.FirstOrDefault(p => p.Optional == false);
+                if (firstRequiredProperty != null)
+                {
+                    validationProblems.Add(new ValidationProblem(
+                        $"The cell {worksheet}!{row.Cell(firstRequiredProperty.ColumnIndex)} has no value but is required."));
+                    break;
+                }
+            }
+
+            var dataRow = new T();
+            foreach (var columnProperty in columnProperties)
+            {
+                IXLCell cellValue = null!;
+                try
+                {
+                    cellValue = row.Cell(columnProperty.ColumnIndex);
+
+                    if (cellValue.DataType == XLDataType.Blank)
+                    {
+                        if (columnProperty.Optional)
+                        {
+                            continue;
+                        }
+
+                        validationProblems.Add(
+                            new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required."));
+                        break;
+                    }
+
+                    SetProperty(columnProperty.PropertyInfo, dataRow, cellValue);
+                }
+                catch (Exception e)
+                {
+                    throw new InvalidCastException(
+                        $"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed.",
+                        e);
+                }
+            }
+
+            if (validationProblems.Count > 0)
+            {
+                break;
+            }
+
+            data.Add(dataRow);
+        }
+
+        return (data, validationProblems);
     }
 
     private static void SetProperty<T>(PropertyInfo propertyInfo, T dataRow, IXLCell cellValue)
