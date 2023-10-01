@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 [assembly:InternalsVisibleTo("ExcelUtilitiesTests")]
 
@@ -9,12 +8,12 @@ internal static class ColumnIndexes
 {
     private static readonly Regex ExcelColumnNameRegex = new Regex("^[A-Z]{1,3}$", RegexOptions.Compiled);
 
-    internal static int GetColumnIndex(PropertyInfo propertyInfo, int propertyIndex, string[] headings)
+    internal static int GetColumnIndex(
+        ColumnAttribute columnAttribute, 
+        string propertyName, 
+        int propertyIndex,
+        string[] headings)
     {
-        var columnAttribute =
-            propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).SingleOrDefault() as ColumnAttribute
-            ?? new ColumnAttribute { Index = propertyIndex };
-
         if (columnAttribute.Index > 0)
         {
             return columnAttribute.Index;
@@ -24,15 +23,15 @@ internal static class ColumnIndexes
         {
             if (!ExcelColumnNameRegex.IsMatch(columnAttribute.Name))
             {
-                throw new InvalidOperationException($"The property '{nameof(ColumnAttribute)}.{propertyInfo.Name}' has an invalid Name of '{columnAttribute.Name}'.");
+                throw new InvalidOperationException($"The property '{nameof(ColumnAttribute)}.{propertyName}' has an invalid Name of '{columnAttribute.Name}'.");
             }
 
             return Utilities.ExcelColumnNameToIndex(columnAttribute.Name);
         }
 
-        if (ExcelColumnNameRegex.IsMatch(propertyInfo.Name))
+        if (ExcelColumnNameRegex.IsMatch(propertyName))
         {
-            return Utilities.ExcelColumnNameToIndex(propertyInfo.Name);
+            return Utilities.ExcelColumnNameToIndex(propertyName);
         }
 
         if (headings.Any() && !string.IsNullOrEmpty(columnAttribute.Heading))
@@ -51,7 +50,7 @@ internal static class ColumnIndexes
             throw new InvalidOperationException($"The property '{nameof(ColumnAttribute)}.{nameof(ColumnAttribute.Heading)}' has provided a heading '{columnAttribute.Heading}' that does not exist in the list of spreadsheet headings.");
         }
         
-        var propertyNameIndex = Array.FindIndex(headings, h => h.Equals(propertyInfo.Name, StringComparison.InvariantCultureIgnoreCase));
+        var propertyNameIndex = Array.FindIndex(headings, h => h.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase));
         if (propertyNameIndex >= 0)
         {
             return propertyNameIndex + 1;

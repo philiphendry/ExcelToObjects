@@ -14,9 +14,10 @@ public class WorksheetAttribute : Attribute
     public string? Name { get; init; } = null;
 
     /// <summary>
-    /// Blank rows among rows of data can be skipped.
-    /// If not they will be raised as validation errors.
-    /// The default is <value>false</value>. 
+    /// If no mapped properties are set from the row in the spreadsheet then, be
+    /// default, a validation problem will be raised along with any problems resulting
+    /// from required properties that have no value. Setting <see cref="SkipBlankRows"/>
+    /// to <value>true</value> will skip these rows without reporting any issues.
     /// </summary>
     public bool SkipBlankRows { get; init; } = false;
 

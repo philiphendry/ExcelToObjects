@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using ExcelUtilities;
 // ReSharper disable ClassNeverInstantiated.Local
 // ReSharper disable UnassignedGetOnlyAutoProperty
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 
 namespace ExcelToObjectsTests;
 
@@ -160,7 +161,7 @@ public class ExcelToObjectsTests
     [Worksheet(Name = "WithHeadings", HasHeadings = true)]
     private class WorksheetWithHeadings
     {
-        [Column(Heading = "First Column")] public string FirstColumn { get; init; }
+        [Column(Heading = "First Column")] public string? FirstColumn { get; init; }
         [Column(Heading = "Second Column")] public double SecondColumn { get; init; }
         [Column(Heading = "Third Column")] public DateOnly ThirdColumn { get; init; }
         [Column(Heading = "Fourth Column")] public double FourthColumn { get; init; }
@@ -180,7 +181,7 @@ public class ExcelToObjectsTests
     [Worksheet(Name = "WithHeadings", HasHeadings = true)]
     private class WorksheetWithOptionalColumn
     {
-        [Column(Heading = "An optional column", Optional = true)] public string OptionalColumn { get; init; }
+        [Column(Heading = "An optional column", Optional = true)] public string? OptionalColumn { get; init; }
     }
     
     [Test]
@@ -206,17 +207,60 @@ public class ExcelToObjectsTests
     }
 
     [Worksheet(Name = "WithBlankRows")]
-    private class WorksheetWithBlankRows
+    private class WorksheetWithBlankRowsAndRequiredProperty
     {
-        [Column] public double? FirstColumn { get; init; }
-        [Column] public string SecondColumn { get; init; }
+        [Column(Optional = true)] public double? FirstColumn { get; init; }
+        [Column] public string? SecondColumn { get; init; }
     }
 
     [Test]
-    public void Given_WorksheetWithBlankRows_Then_TheDataIsReturnedWithNullValues()
+    public void Given_WorksheetWithBlankRows_Then_AValidationProblemIsReturned()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithBlankRows>(_testFilename);
+        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
+        Assert.That(result.IsValid, Is.False);
+    }
+    
+    [Worksheet(Name = "WithBlankRows", SkipBlankRows = true)]
+    private class WorksheetWithBlankRowsSkipped
+    {
+        [Column] public double? FirstColumn { get; init; }
+        [Column] public string? SecondColumn { get; init; }
+    }
+    
+    [Test]
+    public void Given_WorksheetWithBlankRowsAndSkipEnabled_Then_TheDataIsReturnedWithoutTheBlankRows()
+    {
+        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsSkipped>(_testFilename);
         Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Data.Count, Is.EqualTo(5));
+        
+        Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1d));
+        Assert.That(result.Data[1].FirstColumn, Is.EqualTo(2d));
+        Assert.That(result.Data[2].FirstColumn, Is.EqualTo(4d));
+        Assert.That(result.Data[3].FirstColumn, Is.EqualTo(5d));
+        Assert.That(result.Data[4].FirstColumn, Is.EqualTo(6d));
+        
+        Assert.That(result.Data[0].SecondColumn, Is.EqualTo("one"));
+        Assert.That(result.Data[1].SecondColumn, Is.EqualTo("two"));
+        Assert.That(result.Data[2].SecondColumn, Is.EqualTo("four"));
+        Assert.That(result.Data[3].SecondColumn, Is.EqualTo("five"));
+        Assert.That(result.Data[4].SecondColumn, Is.EqualTo("six"));
+    }
+    
+    [Worksheet(Name = "WithBlankRows")]
+    private class WorksheetWithBlankRowsAndAllOptionalProperties
+    {
+        [Column(Optional = true)] public double? FirstColumn { get; init; }
+        [Column(Optional = true)] public string? SecondColumn { get; init; }
+    }
+    
+    [Test]
+    public void Given_WorksheetWithBlankRowsAndAllPropertiesOptional_Then_TheBlankRowsResultInAnObjectWithNoPropertiesSet()
+    {
+        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndAllOptionalProperties>(_testFilename);
+        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.Data.Count, Is.EqualTo(7));
+        
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1d));
         Assert.That(result.Data[1].FirstColumn, Is.EqualTo(2d));
         Assert.That(result.Data[2].FirstColumn, Is.Null);
@@ -232,30 +276,5 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[4].SecondColumn, Is.Null);
         Assert.That(result.Data[5].SecondColumn, Is.EqualTo("five"));
         Assert.That(result.Data[6].SecondColumn, Is.EqualTo("six"));
-    }
-    
-    [Worksheet(Name = "WithBlankRows", SkipBlankRows = true)]
-    private class WorksheetWithBlankRowsSkipped
-    {
-        [Column] public double? FirstColumn { get; init; }
-        [Column] public string SecondColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_WorksheetWithBlankRowsAndSkipEnabled_Then_TheDataIsReturnedWithoutTheBlankRows()
-    {
-        var result = ExcelToObjects.ReadData<WorksheetWithBlankRows>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
-        Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1d));
-        Assert.That(result.Data[1].FirstColumn, Is.EqualTo(2d));
-        Assert.That(result.Data[2].FirstColumn, Is.EqualTo(4d));
-        Assert.That(result.Data[3].FirstColumn, Is.EqualTo(5d));
-        Assert.That(result.Data[4].FirstColumn, Is.EqualTo(6d));
-        
-        Assert.That(result.Data[0].SecondColumn, Is.EqualTo("one"));
-        Assert.That(result.Data[1].SecondColumn, Is.EqualTo("two"));
-        Assert.That(result.Data[2].SecondColumn, Is.EqualTo("four"));
-        Assert.That(result.Data[3].SecondColumn, Is.EqualTo("five"));
-        Assert.That(result.Data[4].SecondColumn, Is.EqualTo("six"));
     }
 }

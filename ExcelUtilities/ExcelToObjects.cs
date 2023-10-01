@@ -23,24 +23,45 @@ public static class ExcelToObjects
                 ? worksheet.Row(worksheetAttribute.HeadingsOnRow).Cells().Select(c => c.Value.ToString()).ToArray()
                 : Array.Empty<string>();
 
-            var columnProperties = typeof(T).GetProperties().Select((p, i) =>
-                new
-                {
-                    PropertyInfo = p,
-                    p.PropertyType,
-                    ColumnIndex = ColumnIndexes.GetColumnIndex(p, i, worksheetHeadings)
-                })
+            var columnProperties = typeof(T)
+                .GetProperties()
+                .Select(propertyInfo =>
+                    new
+                    {
+                        PropertyInfo = propertyInfo,
+                        ColumnAttribute =
+                            propertyInfo.GetCustomAttributes(typeof(ColumnAttribute), false).SingleOrDefault() as
+                                ColumnAttribute
+                    })
+                .Where(c => c.ColumnAttribute != null)
+                .Select((c, propertyIndex) =>
+                    new
+                    {
+                        PropertyInfo = c.PropertyInfo,
+                        PropertyName = c.PropertyInfo.Name,
+                        PropertyIndex = propertyIndex,
+                        PropertyType = c.PropertyInfo.PropertyType,
+                        Optional = c.ColumnAttribute!.Optional,
+                        ColumnIndex = ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
+                            c.PropertyInfo.Name, propertyIndex, worksheetHeadings)
+                    })
                 // Filter out the columns that are optional and don't exist
                 .Where(p => p.ColumnIndex != -1)
                 .ToList();
             
-            var rowCount = worksheet.LastRowUsed()?.RowNumber() ?? 0;
+            var rowCount = worksheet.LastRowUsed(XLCellsUsedOptions.Contents)?.RowNumber() ?? 0;
             var rowIndex = worksheetAttribute.HasHeadings ? worksheetAttribute.HeadingsOnRow + 1 : 1;
             while (rowIndex <= rowCount)
             {
-                var dataRow = new T();
+                if (worksheetAttribute.SkipBlankRows 
+                    && columnProperties.All(cp =>
+                        worksheet.Cell(rowIndex, cp.ColumnIndex).DataType == XLDataType.Blank))
+                {
+                    rowIndex++;
+                    continue;
+                }
 
-                var countBlankCells = 0;
+                var dataRow = new T();
                 foreach (var columnProperty in columnProperties)
                 {
                     IXLCell cellValue = null!;
@@ -50,8 +71,13 @@ public static class ExcelToObjects
 
                         if (cellValue.DataType == XLDataType.Blank)
                         {
-                            countBlankCells++;
-                            continue;
+                            if (columnProperty.Optional)
+                            {
+                                continue;
+                            }
+                            
+                            validationProblems.Add(new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required"));
+                            break;
                         }
                         
                         if (columnProperty.PropertyType == typeof(double) || columnProperty.PropertyType == typeof(double?))
@@ -85,12 +111,12 @@ public static class ExcelToObjects
                     }
                 }
 
-                if (countBlankCells != columnProperties.Count || countBlankCells == columnProperties.Count && !worksheetAttribute.SkipBlankRows)
+                if (validationProblems.Count > 0)
                 {
-                    data.Add(dataRow);
+                    break;
                 }
-
                 
+                data.Add(dataRow);
                 rowIndex++;
             }
         }
