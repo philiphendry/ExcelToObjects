@@ -23,7 +23,7 @@ public class ExcelToObjectsTests
     public void Given_AttributeWithWorksheetName_Then_TheWorksheetCanBeIdentified()
     {
         var result = ExcelToObjects.ReadData<IdentifyWorkSheetButNoColumns>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
     }
 
     private class WorksheetByClassName { }
@@ -32,7 +32,7 @@ public class ExcelToObjectsTests
     public void Given_AttributeWithNoWorksheetName_Then_TheWorksheetCanBeIdentifiedFromTheClassname()
     {
         var result = ExcelToObjects.ReadData<WorksheetByClassName>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
     }
 
     [Worksheet(Name = "This does not exist")]
@@ -57,7 +57,7 @@ public class ExcelToObjectsTests
     public void Given_WorksheetWithNoHeadingsAndColumnIdentifiedByName_Then_TheDataIsMapped()
     {
         var result = ExcelToObjects.ReadData<OneColumnWithExistingName>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(1));
         Assert.That(result.Data[0].ColumnData, Is.EqualTo("find me"));
     }
@@ -73,7 +73,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfDouble_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<DoubleColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DoubleColumn, Is.EqualTo(1.23d));
         Assert.That(result.Data[0].NullableDoubleColumn, Is.EqualTo(1.23d));
     }
@@ -89,7 +89,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfDateOnly_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<DateOnlyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
         Assert.That(result.Data[0].NullableDateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
     }
@@ -105,7 +105,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfDateTime_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<DateTimeColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
         Assert.That(result.Data[0].NullableDateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
     }
@@ -121,7 +121,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfTimeOnly_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<TimeOnlyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].TimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
         Assert.That(result.Data[0].NullableTimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
     }
@@ -137,7 +137,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfAccounting_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<AccountingColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].AccountingColumn, Is.EqualTo(100.00d));
         Assert.That(result.Data[0].NullableAccountingColumn, Is.EqualTo(100.00d));
     } 
@@ -153,7 +153,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnDefinitionOfCurrency_Then_TheDataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<CurrencyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].CurrencyColumn, Is.EqualTo(12.23d));
         Assert.That(result.Data[0].NullableCurrencyColumn, Is.EqualTo(12.23d));
     }
@@ -171,7 +171,7 @@ public class ExcelToObjectsTests
     public void Given_ColumnsWithHeadings_Then_DataIsMappedCorrectly()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithHeadings>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo("one"));
         Assert.That(result.Data[0].SecondColumn, Is.EqualTo(1.23d));
         Assert.That(result.Data[0].ThirdColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
@@ -188,7 +188,7 @@ public class ExcelToObjectsTests
     public void Given_AColumnMarkedAsOptionalThatDoesNotExist_Then_ItWillNotBePopulated()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithOptionalColumn>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].OptionalColumn, Is.Null);
     }
 
@@ -202,7 +202,7 @@ public class ExcelToObjectsTests
     public void Given_HeadingsStartOnRowThree_Then_DateIsReadFromRowFour()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithHeadingsOnRowThree>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo(234));
     }
 
@@ -214,7 +214,7 @@ public class ExcelToObjectsTests
     }
 
     [Test]
-    public void Given_WorksheetWithBlankRows_Then_AValidationProblemIsReturned()
+    public void Given_WorksheetWithBlankRowsAndRequiredProperties_Then_AValidationProblemIsReturned()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
         Assert.That(result.IsValid, Is.False);
@@ -231,7 +231,7 @@ public class ExcelToObjectsTests
     public void Given_WorksheetWithBlankRowsAndSkipEnabled_Then_TheDataIsReturnedWithoutTheBlankRows()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsSkipped>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(5));
         
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1d));
@@ -258,7 +258,7 @@ public class ExcelToObjectsTests
     public void Given_WorksheetWithBlankRowsAndAllPropertiesOptional_Then_TheBlankRowsResultInAnObjectWithNoPropertiesSet()
     {
         var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndAllOptionalProperties>(_testFilename);
-        Assert.That(result.IsValid, Is.True);
+        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(7));
         
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1d));

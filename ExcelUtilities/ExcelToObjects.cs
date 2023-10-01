@@ -1,4 +1,7 @@
-﻿using ClosedXML.Excel;
+﻿using System.Reflection;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace ExcelUtilities;
 
@@ -40,7 +43,6 @@ public static class ExcelToObjects
                         PropertyInfo = c.PropertyInfo,
                         PropertyName = c.PropertyInfo.Name,
                         PropertyIndex = propertyIndex,
-                        PropertyType = c.PropertyInfo.PropertyType,
                         Optional = c.ColumnAttribute!.Optional,
                         ColumnIndex = ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
                             c.PropertyInfo.Name, propertyIndex, worksheetHeadings)
@@ -48,26 +50,41 @@ public static class ExcelToObjects
                 // Filter out the columns that are optional and don't exist
                 .Where(p => p.ColumnIndex != -1)
                 .ToList();
-            
-            var rowCount = worksheet.LastRowUsed(XLCellsUsedOptions.Contents)?.RowNumber() ?? 0;
-            var rowIndex = worksheetAttribute.HasHeadings ? worksheetAttribute.HeadingsOnRow + 1 : 1;
-            while (rowIndex <= rowCount)
-            {
-                if (worksheetAttribute.SkipBlankRows 
-                    && columnProperties.All(cp =>
-                        worksheet.Cell(rowIndex, cp.ColumnIndex).DataType == XLDataType.Blank))
-                {
-                    rowIndex++;
-                    continue;
-                }
 
+            var firstRowIndex = worksheetAttribute.HasHeadings ? worksheetAttribute.HeadingsOnRow + 1 : 1;
+            var lastRowIndex = worksheet.LastRowUsed(XLCellsUsedOptions.Contents)?.RowNumber() ?? 0;
+
+            // Ignore any trailing blanks rows
+            while (lastRowIndex > 0 && worksheet.Row(lastRowIndex).Cells(usedCellsOnly: true).All(c => string.IsNullOrEmpty(c.GetString().Trim())))
+            {
+                lastRowIndex--;
+            }
+            
+            foreach (var row in worksheet.Rows(firstRowIndex, lastRowIndex))
+            {
+                if (row.Cells(usedCellsOnly: true).All(c => c.DataType == XLDataType.Blank))
+                {
+                    if (worksheetAttribute.SkipBlankRows)
+                    {
+                        continue;
+                    }
+
+                    var firstRequiredProperty = columnProperties.FirstOrDefault(p => p.Optional == false);
+                    if (firstRequiredProperty != null)
+                    {
+                        validationProblems.Add(new ValidationProblem(
+                            $"The cell {worksheet}!{row.Cell(firstRequiredProperty.ColumnIndex)} has no value but is required."));
+                        break;
+                    }
+                }
+                
                 var dataRow = new T();
                 foreach (var columnProperty in columnProperties)
                 {
                     IXLCell cellValue = null!;
                     try
                     {
-                        cellValue = worksheet.Cell(rowIndex, columnProperty.ColumnIndex);
+                        cellValue = row.Cell(columnProperty.ColumnIndex);
 
                         if (cellValue.DataType == XLDataType.Blank)
                         {
@@ -76,38 +93,15 @@ public static class ExcelToObjects
                                 continue;
                             }
                             
-                            validationProblems.Add(new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required"));
+                            validationProblems.Add(new ValidationProblem($"The cell {worksheet}!{cellValue} has no value but is required."));
                             break;
                         }
-                        
-                        if (columnProperty.PropertyType == typeof(double) || columnProperty.PropertyType == typeof(double?))
-                        {
-                            columnProperty.PropertyInfo.SetValue(dataRow, cellValue.GetValue<double>());
-                        }
-                        else if (columnProperty.PropertyType == typeof(DateOnly) || columnProperty.PropertyType == typeof(DateOnly?))
-                        {
-                            columnProperty.PropertyInfo.SetValue(dataRow, DateOnly.FromDateTime(cellValue.GetDateTime()));
-                        }
-                        else if (columnProperty.PropertyType == typeof(DateTime) || columnProperty.PropertyType == typeof(DateTime?))
-                        {
-                            columnProperty.PropertyInfo.SetValue(dataRow, cellValue.GetValue<DateTime>());
-                        }
-                        else if (columnProperty.PropertyType == typeof(TimeOnly) || columnProperty.PropertyType == typeof(TimeOnly?))
-                        {
-                            columnProperty.PropertyInfo.SetValue(dataRow, TimeOnly.FromTimeSpan(cellValue.GetValue<TimeSpan>()));
-                        }
-                        else if (columnProperty.PropertyType == typeof(string))
-                        {
-                            columnProperty.PropertyInfo.SetValue(dataRow, cellValue.GetString());
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException($"The property '{typeof(T).Name}.{columnProperty.PropertyInfo.Name}' is declared as '{columnProperty.PropertyType.Name}' which is not supported.");
-                        }
+
+                        SetProperty(columnProperty.PropertyInfo, dataRow, cellValue);
                     }
                     catch (Exception e)
                     {
-                        throw new InvalidCastException($"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyType.Name}' failed.", e);
+                        throw new InvalidCastException($"The conversion of the value {worksheet}!{cellValue} with type '{cellValue.DataType}' to property type '{columnProperty.PropertyInfo.PropertyType.Name}' failed.", e);
                     }
                 }
 
@@ -117,10 +111,39 @@ public static class ExcelToObjects
                 }
                 
                 data.Add(dataRow);
-                rowIndex++;
             }
         }
 
         return new ConversionResult<T>(validationProblems, data);
+    }
+
+    private static void SetProperty<T>(PropertyInfo propertyInfo, T dataRow, IXLCell cellValue)
+        where T : new()
+    {
+        if (propertyInfo.PropertyType == typeof(double) || propertyInfo.PropertyType == typeof(double?))
+        {
+            propertyInfo.SetValue(dataRow, cellValue.GetValue<double>());
+        }
+        else if (propertyInfo.PropertyType == typeof(DateOnly) || propertyInfo.PropertyType == typeof(DateOnly?))
+        {
+            propertyInfo.SetValue(dataRow, DateOnly.FromDateTime(cellValue.GetDateTime()));
+        }
+        else if (propertyInfo.PropertyType == typeof(DateTime) || propertyInfo.PropertyType == typeof(DateTime?))
+        {
+            propertyInfo.SetValue(dataRow, cellValue.GetValue<DateTime>());
+        }
+        else if (propertyInfo.PropertyType == typeof(TimeOnly) || propertyInfo.PropertyType == typeof(TimeOnly?))
+        {
+            propertyInfo.SetValue(dataRow, TimeOnly.FromTimeSpan(cellValue.GetValue<TimeSpan>()));
+        }
+        else if (propertyInfo.PropertyType == typeof(string))
+        {
+            propertyInfo.SetValue(dataRow, cellValue.GetString());
+        }
+        else
+        {
+            throw new InvalidOperationException(
+                $"The property '{typeof(T).Name}.{propertyInfo.Name}' is declared as '{propertyInfo.PropertyType.Name}' which is not supported.");
+        }
     }
 }
