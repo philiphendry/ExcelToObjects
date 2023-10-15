@@ -9,6 +9,10 @@
 
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
+      <PackageReference Include="coverlet.collector" Version="6.0.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

@@ -2,7 +2,7 @@
 
 internal static class Utilities
 {
-    internal static int ExcelColumnNameToIndex(string columnName)
+    internal static int ExcelColumnNameToOrdinal(string columnName)
     {
         var index = 0;
         foreach (var letter in columnName)
@@ -12,5 +12,19 @@ internal static class Utilities
         }
 
         return index;
+    }
+    
+    internal static string ExcelColumnOrdinalToName(int columnOrdinal)
+    {
+        var dividend = columnOrdinal;
+        var columnName = string.Empty;
+	
+        while (dividend > 0)
+        {
+            var modulo = (dividend - 1) % 26;
+            columnName = Convert.ToChar(65 + modulo) + columnName;
+            dividend = (dividend - modulo) / 26;
+        }
+        return columnName;
     }
 }

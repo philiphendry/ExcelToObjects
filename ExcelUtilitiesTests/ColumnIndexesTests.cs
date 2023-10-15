@@ -22,28 +22,28 @@ public class ColumnIndexesTests
     public void Given_AnAttributeNameIsProvidedAndExistsInTheHeadings_Then_TheMatchingColumnIndexIsReturned()
     {
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute() { Name = "BB"}, "ColumnWithName", 0, Array.Empty<string>());
-        Assert.That(index, Is.EqualTo(54));
+        Assert.That(index, Is.EqualTo(53));
     }
 
     [Test]
     public void Given_APropertyNamedAsAnExcelColumn_Then_TheMatchingColumnIndexIsReturned()
     {
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute(), "DQ", 0, Array.Empty<string>());
-        Assert.That(index, Is.EqualTo(121));
+        Assert.That(index, Is.EqualTo(120));
     }
 
     [Test]
     public void Given_AnAttributeHeadingIsProvidedAndExistsInTheHeadings_Then_TheMatchingColumnIndexIsReturned()
     {
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute() { Heading = "Four"}, "ColumnWithHeading", 0, new[] { "one", "two", "three", "four", "five", "six" });
-        Assert.That(index, Is.EqualTo(4));
+        Assert.That(index, Is.EqualTo(3));
     }
 
     [Test]
     public void Given_AnAttributeHeadingIsProvidedMatchingTheFirstHeading_Then_IndexOneIsReturned()
     {
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute() { Heading = "one"}, "FirstColumn", 0, new[] { "one", "two", "three", "four", "five", "six" });
-        Assert.That(index, Is.EqualTo(1));
+        Assert.That(index, Is.EqualTo(0));
     }
 
     [Test]
@@ -57,7 +57,7 @@ public class ColumnIndexesTests
     public void Given_APropertyNameThatMatchesAHeading_Then_TheMatchingColumnIndexIsReturned()
     {
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute(), "Three", 0, new[] { "one", "two", "three", "four", "five", "six" });
-        Assert.That(index, Is.EqualTo(3));
+        Assert.That(index, Is.EqualTo(2));
     }
     
     [Test]
@@ -65,6 +65,6 @@ public class ColumnIndexesTests
     {
         // Property indexes are zero-based whilst the columns are one-based
         var index = ColumnIndexes.GetColumnIndex(new ColumnAttribute(), "MatchedByPropertyIndex", 8, new[] { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine" });
-        Assert.That(index, Is.EqualTo(9));
+        Assert.That(index, Is.EqualTo(8));
     }
 }

@@ -218,7 +218,7 @@ public class ExcelToObjectsTests
     {
         var result = ExcelToObjects.ReadData<WorksheetWithHeadingsOnRowThree>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].FirstColumn, Is.EqualTo(234));
+        Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1234));
     }
 
     [Worksheet(Name = "WithBlankRows")]
@@ -235,6 +235,7 @@ public class ExcelToObjectsTests
     {
         var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
         Assert.That(result.IsValid, Is.False);
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B has no value but is required."));
     }
     
     [Worksheet(Name = "WithBlankRows", SkipBlankRows = true)]
@@ -305,13 +306,5 @@ public class ExcelToObjectsTests
         [Column] public string? Fourth { get; set; }
         [Column] public DateOnly Fifth { get; set; }
         // ReSharper restore UnusedMember.Local
-    }
-
-    [Test]
-    public void BenchmarkTest()
-    {
-        var filename = Path.Combine(Environment.CurrentDirectory, @"TestFiles\Benchmark.xlsx");
-        var results = ExcelToObjects.ReadData<BenchmarkData>(filename);
-        Assert.That(results.IsValid, Is.True);
     }
 }

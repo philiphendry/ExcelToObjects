@@ -26,12 +26,12 @@ internal static class ColumnIndexes
                 throw new InvalidOperationException($"The property '{nameof(ColumnAttribute)}.{propertyName}' has an invalid Name of '{columnAttribute.Name}'.");
             }
 
-            return Utilities.ExcelColumnNameToIndex(columnAttribute.Name);
+            return Utilities.ExcelColumnNameToOrdinal(columnAttribute.Name) - 1;
         }
 
         if (ExcelColumnNameRegex.IsMatch(propertyName))
         {
-            return Utilities.ExcelColumnNameToIndex(propertyName);
+            return Utilities.ExcelColumnNameToOrdinal(propertyName) - 1;
         }
 
         if (headings.Any() && !string.IsNullOrEmpty(columnAttribute.Heading))
@@ -39,7 +39,7 @@ internal static class ColumnIndexes
             var headingIndex = Array.FindIndex(headings, h => h.Equals(columnAttribute.Heading, StringComparison.InvariantCultureIgnoreCase));
             if (headingIndex >= 0)
             {
-                return headingIndex + 1;
+                return headingIndex;
             }
 
             if (columnAttribute.Optional)
@@ -53,9 +53,9 @@ internal static class ColumnIndexes
         var propertyNameIndex = Array.FindIndex(headings, h => h.Equals(propertyName, StringComparison.InvariantCultureIgnoreCase));
         if (propertyNameIndex >= 0)
         {
-            return propertyNameIndex + 1;
+            return propertyNameIndex;
         }
 
-        return propertyIndex + 1;
+        return propertyIndex;
     }
 }

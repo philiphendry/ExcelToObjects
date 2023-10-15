@@ -5,9 +5,9 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-    
+
     <ItemGroup>
-      <PackageReference Include="ClosedXML" Version="0.102.1" />
+      <PackageReference Include="Sylvan.Data.Excel" Version="0.4.17" />
     </ItemGroup>
 
 </Project>

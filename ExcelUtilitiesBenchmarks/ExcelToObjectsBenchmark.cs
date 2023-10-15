@@ -15,7 +15,7 @@ public class ExcelToObjectsBenchmark
     }
 
     [Worksheet(Name = "Sheet1", HasHeadings = true)]
-    private class BenchmarkData
+    public class BenchmarkData
     {
         // ReSharper disable UnusedMember.Local
         [Column] public int First { get; set; }
