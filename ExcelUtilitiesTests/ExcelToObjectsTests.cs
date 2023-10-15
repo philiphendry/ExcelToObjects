@@ -207,6 +207,21 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[0].OptionalColumn, Is.Null);
     }
 
+    [Worksheet(Name = "MissingRequired", HasHeadings = true)]
+    private class WorksheetWithMissingRequired
+    {
+        [Column(Heading = "NonOptional", Optional = false)] public string RequiredColumn { get; init; }
+        [Column(Heading = "Second", Optional = false)] public int SecondColumn { get; init; } 
+    }
+
+    [Test]
+    public void Given_ARequiredColumnIsMissing_Then_AValidationErrorIsReturned()
+    {
+        var result = ExcelToObjects.ReadData<WorksheetWithMissingRequired>(_testFilename);
+        Assert.That(result.IsValid, Is.False);
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A has no value but is required."));
+    }
+
     [Worksheet(Name = "HeadingsOnRowThree", HasHeadings = true, HeadingsOnRow = 3)]
     private class WorksheetWithHeadingsOnRowThree
     {
@@ -296,15 +311,16 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[6].SecondColumn, Is.EqualTo("six"));
     }
     
-    [Worksheet(Name = "Sheet1", HasHeadings = true)]
-    private class BenchmarkData
+    [Worksheet(Name = "WithBlankRows", HasHeadings = true)]
+    private class PropertyWithUnsupportedType
     {
-        // ReSharper disable UnusedMember.Local
-        [Column] public int First { get; set; }
-        [Column] public double Second { get; set; }
-        [Column] public string? Third { get; set; }
-        [Column] public string? Fourth { get; set; }
-        [Column] public DateOnly Fifth { get; set; }
-        // ReSharper restore UnusedMember.Local
+        [Column] public object First { get; set; }
+    }
+
+    [Test]
+    public void Given_APropertyDeclaredWithAnUnsupportedType_Then_AnExceptionIsThrown()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() => ExcelToObjects.ReadData<PropertyWithUnsupportedType>(_testFilename));
+        Assert.That(exception.Message, Is.EqualTo("The property 'PropertyWithUnsupportedType.First' is declared as 'Object' which is not supported."));
     }
 }

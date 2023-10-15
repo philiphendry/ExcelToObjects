@@ -1,5 +1,4 @@
-﻿using System.Reflection;
-using Sylvan.Data.Excel;
+﻿using Sylvan.Data.Excel;
 
 namespace ExcelUtilities;
 
@@ -89,11 +88,6 @@ public static class ExcelToObjects
             
             LoadCellData(worksheet, propertyMappings, validationProblems, dataRow);
 
-            // if (validationProblems.Count > 0)
-            // {
-            //     break;
-            // }
-            
             data.Add(dataRow);
         }
 
@@ -118,7 +112,7 @@ public static class ExcelToObjects
                 break;
             }
 
-            SetProperty(propertyMapping.PropertyInfo, dataRow, worksheet, propertyMapping.ColumnIndex);
+            SetProperty(dataRow, worksheet, propertyMapping);
         }
     }
 
@@ -146,9 +140,11 @@ public static class ExcelToObjects
         return worksheetHeadings;
     }
 
-    private static void SetProperty<T>(PropertyInfo propertyInfo, T dataRow, ExcelDataReader excelDataReader, int columnIndex)
+    private static void SetProperty<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
         where T : new()
     {
+        var propertyInfo = propertyMapping.PropertyInfo;
+        var columnIndex = propertyMapping.ColumnIndex;
         if (propertyInfo.PropertyType == typeof(double))
         {
             propertyInfo.SetValue(dataRow, excelDataReader.GetDouble(columnIndex));
