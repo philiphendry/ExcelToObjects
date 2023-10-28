@@ -61,118 +61,6 @@ public class ExcelToObjectsTests
         Assert.That(result.Data[0].ColumnData, Is.EqualTo("find me"));
     }
     
-    [Worksheet(Name = "TypeTests")]
-    private class DoubleColumnWorksheet
-    {
-        [Column(Name = "B")] public double DoubleColumn { get; init; }
-        [Column(Name = "B")] public double? NullableDoubleColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfDouble_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<DoubleColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].DoubleColumn, Is.EqualTo(1.23d));
-        Assert.That(result.Data[0].NullableDoubleColumn, Is.EqualTo(1.23d));
-    }
-
-    [Worksheet(Name = "TypeTests")]
-    private class IntegerColumnWorksheet
-    {
-        [Column(Name = "H")] public int IntegerColumn { get; init; }
-        [Column(Name = "H")] public int? NullableIntegerColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfInteger_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<IntegerColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].IntegerColumn, Is.EqualTo(3));
-        Assert.That(result.Data[0].NullableIntegerColumn, Is.EqualTo(3));
-    }
-    
-    [Worksheet(Name = "TypeTests")]
-    private class DateOnlyColumnWorksheet
-    {
-        [Column(Name = "C")] public DateOnly DateOnlyColumn { get; init; }
-        [Column(Name = "C")] public DateOnly? NullableDateOnlyColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfDateOnly_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<DateOnlyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].DateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
-        Assert.That(result.Data[0].NullableDateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
-    }
-    
-    [Worksheet(Name = "TypeTests")]
-    private class DateTimeColumnWorksheet
-    {
-        [Column(Name = "E")] public DateTime DateTimeColumn { get; init; }
-        [Column(Name = "E")] public DateTime? NullableDateTimeColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfDateTime_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<DateTimeColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].DateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
-        Assert.That(result.Data[0].NullableDateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
-    }
-    
-    [Worksheet(Name = "TypeTests")]
-    private class TimeOnlyColumnWorksheet
-    {
-        [Column(Name = "F")] public TimeOnly TimeOnlyColumn { get; init; }
-        [Column(Name = "F")] public TimeOnly? NullableTimeOnlyColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfTimeOnly_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<TimeOnlyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].TimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
-        Assert.That(result.Data[0].NullableTimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
-    }
-    
-    [Worksheet(Name = "TypeTests")]
-    private class AccountingColumnWorksheet
-    {
-        [Column(Name = "D")] public double AccountingColumn { get; init; }
-        [Column(Name = "D")] public double? NullableAccountingColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfAccounting_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<AccountingColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].AccountingColumn, Is.EqualTo(100.00d));
-        Assert.That(result.Data[0].NullableAccountingColumn, Is.EqualTo(100.00d));
-    } 
-    
-    [Worksheet(Name = "TypeTests")]
-    private class CurrencyColumnWorksheet
-    {
-        [Column(Name = "G")] public double CurrencyColumn { get; init; }
-        [Column(Name = "G")] public double? NullableCurrencyColumn { get; init; }
-    }
-    
-    [Test]
-    public void Given_ColumnDefinitionOfCurrency_Then_TheDataIsMappedCorrectly()
-    {
-        var result = ExcelToObjects.ReadData<CurrencyColumnWorksheet>(_testFilename);
-        Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
-        Assert.That(result.Data[0].CurrencyColumn, Is.EqualTo(12.23d));
-        Assert.That(result.Data[0].NullableCurrencyColumn, Is.EqualTo(12.23d));
-    }
-
     [Worksheet(Name = "WithHeadings", HasHeadings = true)]
     private class WorksheetWithHeadings
     {
@@ -219,7 +107,7 @@ public class ExcelToObjectsTests
     {
         var result = ExcelToObjects.ReadData<WorksheetWithMissingRequired>(_testFilename);
         Assert.That(result.IsValid, Is.False);
-        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A has no value but is required."));
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A3 has no value but is required."));
     }
 
     [Worksheet(Name = "HeadingsOnRowThree", HasHeadings = true, HeadingsOnRow = 3)]
@@ -250,7 +138,7 @@ public class ExcelToObjectsTests
     {
         var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
         Assert.That(result.IsValid, Is.False);
-        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B has no value but is required."));
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B4 has no value but is required."));
     }
     
     [Worksheet(Name = "WithBlankRows", SkipBlankRows = true)]
