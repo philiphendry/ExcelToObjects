@@ -1,21 +1,94 @@
-﻿using Sylvan.Data.Excel;
+﻿using System.Diagnostics.CodeAnalysis;
+using Sylvan.Data.Excel;
 
 namespace ExcelUtilities;
 
-public static class ExcelToObjects
+public class ExcelToObjects
 {
-    public static ConversionResult<T> ReadData<T>(string filename) where T : new()
+    public delegate void SetPropertyHandler<in T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping);
+    
+    private readonly Dictionary<Type, SetPropertyHandler<object>> _propertyHandlers;
+
+    public ExcelToObjects()
     {
+        _propertyHandlers = new Dictionary<Type, SetPropertyHandler<object>>
+        {
+            { typeof(double), SetPropertyDouble },
+            { typeof(double?), SetPropertyDouble },
+            { typeof(int), SetPropertyInt },
+            { typeof(int?), SetPropertyInt },
+            { typeof(DateOnly), SetPropertyDate },
+            { typeof(DateOnly?), SetPropertyDate },
+            { typeof(DateTime), SetPropertyDateTime },
+            { typeof(DateTime?), SetPropertyDateTime },
+            { typeof(TimeOnly), SetPropertyTime },
+            { typeof(TimeOnly?), SetPropertyTime },
+            { typeof(string), SetPropertyString }
+        };
+    }
+    
+    /// <summary>
+    /// By default the following types are supported:
+    /// <list type="bullet">
+    ///     <item><description>double</description></item>
+    ///     <item><description>int</description></item>
+    ///     <item><description>DateOnly</description></item>
+    ///     <item><description>DateTime</description></item>
+    ///     <item><description>TimeOnly</description></item>
+    ///     <item><description>string</description></item>
+    /// </list>
+    /// Along with their nullable counterparts. If you need to support additional types then you can add a handler for them.
+    /// 
+    /// </summary>
+    /// <param name="type">The new type to add support for.</param>
+    /// <param name="handler">A function to perform conversion and setting the property on the target object.</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="ArgumentException"></exception>
+    public void AddPropertyHandler(Type type, SetPropertyHandler<object> handler)
+    {
+        if (type == null) throw new ArgumentNullException(nameof(type));
+        if (handler == null) throw new ArgumentNullException(nameof(handler));
+        if (!_propertyHandlers.TryAdd(type, handler))
+        {
+            throw new ArgumentException($"A handler for '{type.Name}' already exists.", nameof(type));
+        }
+    }
+
+    /// <summary>
+    /// Reads the content of the Excel spreadsheet given by the filename and converts it to a list of objects of type T.
+    /// If the file does not exist then a FileNotFoundException will be thrown. If is not valid and cannot be
+    /// processed according to the attributes then a ConversionResult will be returned with the validation problems.
+    /// </summary>
+    /// <param name="filename"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
+    public ConversionResult<T> ReadData<T>(string filename) where T : new()
+    {
+        if (filename is null) throw new ArgumentNullException(nameof(filename));
+
+        if (!File.Exists(filename))
+        {
+            throw new FileNotFoundException("The file could not be found.", filename);
+        }
+        
         using Stream stream = File.Open(filename, FileMode.Open);
         return InternalReadData<T>(stream);
     }
     
-    public static ConversionResult<T> ReadData<T>(Stream spreadsheetStream) where T : new()
+    /// <summary>
+    /// Reads the content of the Excel spreadsheet given by the stream and converts it to a list of objects of type T.
+    /// </summary>
+    /// <param name="spreadsheetStream"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public ConversionResult<T> ReadData<T>(Stream spreadsheetStream) where T : new()
     {
         return InternalReadData<T>(spreadsheetStream);
     }
 
-    private static ConversionResult<T> InternalReadData<T>(Stream spreadsheetStream) where T : new()
+    private ConversionResult<T> InternalReadData<T>(Stream spreadsheetStream) where T : new()
     {
         var worksheetAttribute = typeof(T).GetCustomAttributes(typeof(WorksheetAttribute), false).SingleOrDefault() as WorksheetAttribute
                                  ?? new WorksheetAttribute { Name = typeof(T).Name };
@@ -36,14 +109,14 @@ public static class ExcelToObjects
         return new ConversionResult<T>(worksheetResult.validationProblems, worksheetResult.data);
     }
 
-    private static (List<T> data, List<ValidationProblem> validationProblems) LoadWorksheet<T>(
+    private (List<T> data, List<ValidationProblem> validationProblems) LoadWorksheet<T>(
         WorksheetAttribute worksheetAttribute, 
         ExcelDataReader worksheet) where T : new()
     {
         var validationProblems = new List<ValidationProblem>();
         var data = new List<T>();
 
-        var worksheetHeadings = GetWorksheetHeadings<T>(worksheetAttribute, worksheet);
+        var worksheetHeadings = GetWorksheetHeadings(worksheetAttribute, worksheet);
         var propertyMappings = GetPropertyMappings<T>(worksheetHeadings);
 
         int? firstBlankRow = null;
@@ -94,11 +167,13 @@ public static class ExcelToObjects
         return (data, validationProblems);
     }
 
-    private static void LoadCellData<T>(
+    private void LoadCellData<T>(
         ExcelDataReader worksheet, List<PropertyMapping> propertyMappings, 
         List<ValidationProblem> validationProblems,
-        T dataRow) where T : new()
+        [DisallowNull] T dataRow) where T : new()
     {
+        if (dataRow == null) throw new ArgumentNullException(nameof(dataRow));
+        
         foreach (var propertyMapping in propertyMappings)
         {
             if (worksheet.GetValue(propertyMapping.ColumnIndex) == DBNull.Value)
@@ -116,8 +191,7 @@ public static class ExcelToObjects
         }
     }
 
-    private static string[] GetWorksheetHeadings<T>(WorksheetAttribute worksheetAttribute, ExcelDataReader worksheet)
-        where T : new()
+    private static string[] GetWorksheetHeadings(WorksheetAttribute worksheetAttribute, ExcelDataReader worksheet)
     {
         string[] worksheetHeadings;
         if (worksheetAttribute.HasHeadings)
@@ -140,44 +214,55 @@ public static class ExcelToObjects
         return worksheetHeadings;
     }
 
-    private static void SetProperty<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+    private void SetProperty<T>([DisallowNull] T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
         where T : new()
     {
-        var propertyInfo = propertyMapping.PropertyInfo;
-        var columnIndex = propertyMapping.ColumnIndex;
-        if (propertyInfo.PropertyType == typeof(double))
+        if (dataRow == null) throw new ArgumentNullException(nameof(dataRow));
+        
+        if (_propertyHandlers.TryGetValue(propertyMapping.PropertyInfo.PropertyType, out var handler))
         {
-            propertyInfo.SetValue(dataRow, excelDataReader.GetDouble(columnIndex));
-        }
-        else if (propertyInfo.PropertyType == typeof(double?))
-        {
-            propertyInfo.SetValue(dataRow, excelDataReader.GetDouble(columnIndex));
-        }
-        else if (propertyInfo.PropertyType == typeof(int) || propertyInfo.PropertyType == typeof(int?))
-        {
-            propertyInfo.SetValue(dataRow, excelDataReader.GetInt32(columnIndex));
-        }
-        else if (propertyInfo.PropertyType == typeof(DateOnly) || propertyInfo.PropertyType == typeof(DateOnly?))
-        {
-            propertyInfo.SetValue(dataRow, DateOnly.FromDateTime(excelDataReader.GetDateTime(columnIndex)));
-        }
-        else if (propertyInfo.PropertyType == typeof(DateTime) || propertyInfo.PropertyType == typeof(DateTime?))
-        {
-            propertyInfo.SetValue(dataRow, excelDataReader.GetDateTime(columnIndex));
-        }
-        else if (propertyInfo.PropertyType == typeof(TimeOnly) || propertyInfo.PropertyType == typeof(TimeOnly?))
-        {
-            propertyInfo.SetValue(dataRow, TimeOnly.FromTimeSpan(excelDataReader.GetTimeSpan(columnIndex)));
-        }
-        else if (propertyInfo.PropertyType == typeof(string))
-        {
-            propertyInfo.SetValue(dataRow, excelDataReader.GetString(columnIndex));
+            handler(dataRow, excelDataReader, propertyMapping);
         }
         else
         {
-            throw new InvalidOperationException(
-                $"The property '{typeof(T).Name}.{propertyInfo.Name}' is declared as '{propertyInfo.PropertyType.Name}' which is not supported.");
+            throw new InvalidOperationException($"The property '{typeof(T).Name}.{propertyMapping.PropertyInfo.Name}' is declared as '{propertyMapping.PropertyInfo.PropertyType.Name}' which is not supported.");
         }
+    }
+
+    private static void SetPropertyString<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, excelDataReader.GetString(propertyMapping.ColumnIndex));
+    }
+
+    private static void SetPropertyTime<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, TimeOnly.FromTimeSpan(excelDataReader.GetTimeSpan(propertyMapping.ColumnIndex)));
+    }
+
+    private static void SetPropertyDateTime<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, excelDataReader.GetDateTime(propertyMapping.ColumnIndex));
+    }
+
+    private static void SetPropertyDate<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, DateOnly.FromDateTime(excelDataReader.GetDateTime(propertyMapping.ColumnIndex)));
+    }
+
+    private static void SetPropertyInt<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, excelDataReader.GetInt32(propertyMapping.ColumnIndex));
+    }
+
+    private static void SetPropertyDouble<T>(T dataRow, ExcelDataReader excelDataReader, PropertyMapping propertyMapping)
+        where T : new()
+    {
+        propertyMapping.PropertyInfo.SetValue(dataRow, excelDataReader.GetDouble(propertyMapping.ColumnIndex));
     }
 
     private static List<PropertyMapping> GetPropertyMappings<T>(string[] worksheetHeadings) where T : new()

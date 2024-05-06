@@ -8,11 +8,13 @@ namespace ExcelToObjectsTests;
 public class ExcelToObjectsTests
 {
     private string _testFilename = null!;
+    private ExcelToObjects _excelToObjects;
 
     [SetUp]
     public void Setup()
     {
         _testFilename = Path.Combine(Environment.CurrentDirectory, @"TestFiles\FirstTest.xlsx");
+        _excelToObjects = new ExcelToObjects();
     }
 
     [Worksheet(Name = "EmptyWorksheet")]
@@ -21,7 +23,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_AttributeWithWorksheetName_Then_TheWorksheetCanBeIdentified()
     {
-        var result = ExcelToObjects.ReadData<IdentifyWorkSheetButNoColumns>(_testFilename);
+        var result = _excelToObjects.ReadData<IdentifyWorkSheetButNoColumns>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
     }
 
@@ -30,7 +32,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_AttributeWithNoWorksheetName_Then_TheWorksheetCanBeIdentifiedFromTheClassname()
     {
-        var result = ExcelToObjects.ReadData<WorksheetByClassName>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetByClassName>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
     }
 
@@ -40,7 +42,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_AttributeWithWorksheetThatDoesNotExist_Then_ReturnNotValid()
     {
-        var result = ExcelToObjects.ReadData<NoWorksheetFoundTest>(_testFilename);
+        var result = _excelToObjects.ReadData<NoWorksheetFoundTest>(_testFilename);
         Assert.That(result.IsValid, Is.False);
         Assert.That(result.ValidationProblems.Count, Is.EqualTo(1));
         Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The worksheet could not be found with the name 'This does not exist'."));
@@ -55,7 +57,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_WorksheetWithNoHeadingsAndColumnIdentifiedByName_Then_TheDataIsMapped()
     {
-        var result = ExcelToObjects.ReadData<OneColumnWithExistingName>(_testFilename);
+        var result = _excelToObjects.ReadData<OneColumnWithExistingName>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(1));
         Assert.That(result.Data[0].ColumnData, Is.EqualTo("find me"));
@@ -71,7 +73,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfDouble_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<DoubleColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<DoubleColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DoubleColumn, Is.EqualTo(1.23d));
         Assert.That(result.Data[0].NullableDoubleColumn, Is.EqualTo(1.23d));
@@ -87,7 +89,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfInteger_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<IntegerColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<IntegerColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].IntegerColumn, Is.EqualTo(3));
         Assert.That(result.Data[0].NullableIntegerColumn, Is.EqualTo(3));
@@ -103,7 +105,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfDateOnly_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<DateOnlyColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<DateOnlyColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
         Assert.That(result.Data[0].NullableDateOnlyColumn, Is.EqualTo(new DateOnly(2020, 09, 01)));
@@ -119,7 +121,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfDateTime_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<DateTimeColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<DateTimeColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].DateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
         Assert.That(result.Data[0].NullableDateTimeColumn, Is.EqualTo(new DateTime(2021, 04, 02, 10, 45, 00)));
@@ -135,7 +137,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfTimeOnly_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<TimeOnlyColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<TimeOnlyColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].TimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
         Assert.That(result.Data[0].NullableTimeOnlyColumn, Is.EqualTo(new TimeOnly(23, 14, 00)));
@@ -151,7 +153,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfAccounting_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<AccountingColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<AccountingColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].AccountingColumn, Is.EqualTo(100.00d));
         Assert.That(result.Data[0].NullableAccountingColumn, Is.EqualTo(100.00d));
@@ -167,7 +169,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnDefinitionOfCurrency_Then_TheDataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<CurrencyColumnWorksheet>(_testFilename);
+        var result = _excelToObjects.ReadData<CurrencyColumnWorksheet>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].CurrencyColumn, Is.EqualTo(12.23d));
         Assert.That(result.Data[0].NullableCurrencyColumn, Is.EqualTo(12.23d));
@@ -185,7 +187,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_ColumnsWithHeadings_Then_DataIsMappedCorrectly()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithHeadings>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithHeadings>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo("one"));
         Assert.That(result.Data[0].SecondColumn, Is.EqualTo(1.23d));
@@ -202,7 +204,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_AColumnMarkedAsOptionalThatDoesNotExist_Then_ItWillNotBePopulated()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithOptionalColumn>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithOptionalColumn>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].OptionalColumn, Is.Null);
     }
@@ -210,14 +212,19 @@ public class ExcelToObjectsTests
     [Worksheet(Name = "MissingRequired", HasHeadings = true)]
     private class WorksheetWithMissingRequired
     {
-        [Column(Heading = "NonOptional", Optional = false)] public string RequiredColumn { get; init; }
-        [Column(Heading = "Second", Optional = false)] public int SecondColumn { get; init; } 
+        [Column(Heading = "NonOptional", Optional = false)]
+        // ReSharper disable once UnusedMember.Local
+        public string RequiredColumn { get; init; } = string.Empty;
+
+        [Column(Heading = "Second", Optional = false)]
+        // ReSharper disable once UnusedMember.Local
+        public int SecondColumn { get; init; }
     }
 
     [Test]
     public void Given_ARequiredColumnIsMissing_Then_AValidationErrorIsReturned()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithMissingRequired>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithMissingRequired>(_testFilename);
         Assert.That(result.IsValid, Is.False);
         Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A has no value but is required."));
     }
@@ -231,7 +238,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_HeadingsStartOnRowThree_Then_DateIsReadFromRowFour()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithHeadingsOnRowThree>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithHeadingsOnRowThree>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data[0].FirstColumn, Is.EqualTo(1234));
     }
@@ -248,7 +255,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_WorksheetWithBlankRowsAndRequiredProperties_Then_AValidationProblemIsReturned()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
         Assert.That(result.IsValid, Is.False);
         Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B has no value but is required."));
     }
@@ -263,7 +270,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_WorksheetWithBlankRowsAndSkipEnabled_Then_TheDataIsReturnedWithoutTheBlankRows()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsSkipped>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithBlankRowsSkipped>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(5));
         
@@ -290,7 +297,7 @@ public class ExcelToObjectsTests
     [Test]
     public void Given_WorksheetWithBlankRowsAndAllPropertiesOptional_Then_TheBlankRowsResultInAnObjectWithNoPropertiesSet()
     {
-        var result = ExcelToObjects.ReadData<WorksheetWithBlankRowsAndAllOptionalProperties>(_testFilename);
+        var result = _excelToObjects.ReadData<WorksheetWithBlankRowsAndAllOptionalProperties>(_testFilename);
         Assert.That(result.IsValid, Is.True, $"First validation problem: {result.ValidationProblems.FirstOrDefault()?.Message}");
         Assert.That(result.Data.Count, Is.EqualTo(7));
         
@@ -314,13 +321,14 @@ public class ExcelToObjectsTests
     [Worksheet(Name = "WithBlankRows", HasHeadings = true)]
     private class PropertyWithUnsupportedType
     {
-        [Column] public object First { get; set; }
+        // ReSharper disable once UnusedMember.Local
+        [Column] public object First { get; set; } = new();
     }
 
     [Test]
     public void Given_APropertyDeclaredWithAnUnsupportedType_Then_AnExceptionIsThrown()
     {
-        var exception = Assert.Throws<InvalidOperationException>(() => ExcelToObjects.ReadData<PropertyWithUnsupportedType>(_testFilename));
+        var exception = Assert.Throws<InvalidOperationException>(() => _excelToObjects.ReadData<PropertyWithUnsupportedType>(_testFilename));
         Assert.That(exception.Message, Is.EqualTo("The property 'PropertyWithUnsupportedType.First' is declared as 'Object' which is not supported."));
     }
 }
