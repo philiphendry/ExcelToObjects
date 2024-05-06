@@ -152,7 +152,7 @@ public class ExcelToObjects
                 if (firstRequiredProperty != null)
                 {
                     validationProblems.Add(new ValidationProblem(
-                        $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(firstRequiredProperty.ColumnIndex + 1)} has no value but is required."));
+                        $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(firstRequiredProperty.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required."));
                     break;
                 }
             }
@@ -183,11 +183,18 @@ public class ExcelToObjects
                     continue;
                 }
 
-                validationProblems.Add(new ValidationProblem($"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)} has no value but is required."));
+                validationProblems.Add(new ValidationProblem($"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required."));
                 break;
             }
 
-            SetProperty(dataRow, worksheet, propertyMapping);
+            try
+            {
+                SetProperty(dataRow, worksheet, propertyMapping);
+            }
+            catch (Exception exception) when (exception is FormatException or InvalidCastException)
+            {
+                validationProblems.Add(new ValidationProblem($"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has the value '{worksheet.GetString(propertyMapping.ColumnIndex)}' which cannot be interpreted as the data type '{propertyMapping.PropertyInfo.PropertyType.Name}'."));
+            }
         }
     }
 

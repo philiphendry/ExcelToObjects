@@ -226,7 +226,7 @@ public class ExcelToObjectsTests
     {
         var result = _excelToObjects.ReadData<WorksheetWithMissingRequired>(_testFilename);
         Assert.That(result.IsValid, Is.False);
-        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A has no value but is required."));
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell MissingRequired!A3 has no value but is required."));
     }
 
     [Worksheet(Name = "HeadingsOnRowThree", HasHeadings = true, HeadingsOnRow = 3)]
@@ -257,7 +257,7 @@ public class ExcelToObjectsTests
     {
         var result = _excelToObjects.ReadData<WorksheetWithBlankRowsAndRequiredProperty>(_testFilename);
         Assert.That(result.IsValid, Is.False);
-        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B has no value but is required."));
+        Assert.That(result.ValidationProblems[0].Message, Is.EqualTo("The cell WithBlankRows!B4 has no value but is required."));
     }
     
     [Worksheet(Name = "WithBlankRows", SkipBlankRows = true)]
