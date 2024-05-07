@@ -152,7 +152,8 @@ public class ExcelToObjects
                 if (firstRequiredProperty != null)
                 {
                     validationProblems.Add(new ValidationProblem(
-                        $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(firstRequiredProperty.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required."));
+                        $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(firstRequiredProperty.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required.",
+                        worksheet.WorksheetName, $"{Utilities.ExcelColumnOrdinalToName(firstRequiredProperty.ColumnIndex + 1)}{worksheet.RowNumber}" ));
                     break;
                 }
             }
@@ -183,7 +184,10 @@ public class ExcelToObjects
                     continue;
                 }
 
-                validationProblems.Add(new ValidationProblem($"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required."));
+                validationProblems.Add(new ValidationProblem(
+                    $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has no value but is required.",
+                    worksheet.WorksheetName,
+                    $"{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber}"));
                 break;
             }
 
@@ -193,7 +197,10 @@ public class ExcelToObjects
             }
             catch (Exception exception) when (exception is FormatException or InvalidCastException)
             {
-                validationProblems.Add(new ValidationProblem($"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has the value '{worksheet.GetString(propertyMapping.ColumnIndex)}' which cannot be interpreted as the data type '{propertyMapping.PropertyInfo.PropertyType.Name}'."));
+                validationProblems.Add(new ValidationProblem(
+                    $"The cell {worksheet.WorksheetName}!{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber} has the value '{worksheet.GetString(propertyMapping.ColumnIndex)}' which cannot be interpreted as the data type '{propertyMapping.PropertyInfo.PropertyType.Name}'.",
+                    worksheet.WorksheetName,
+                    $"{Utilities.ExcelColumnOrdinalToName(propertyMapping.ColumnIndex + 1)}{worksheet.RowNumber}"));
             }
         }
     }
@@ -290,8 +297,6 @@ public class ExcelToObjects
             .Select((c, propertyIndex) =>
                 new PropertyMapping(
                     c.PropertyInfo,
-                    c.PropertyInfo.Name,
-                    propertyIndex,
                     c.ColumnAttribute!.Optional,
                     ColumnIndexes.GetColumnIndex(c.ColumnAttribute!,
                         c.PropertyInfo.Name, 
